@@ -22,7 +22,7 @@ int main(int argc, char * argv[]) {
         char *tmp = parser_get_word(p);
         while (tmp) {
             dictionary_append(dict, tmp);
-            free(tmp); // Освобождаем память под слово
+            free(tmp); 
             tmp = parser_get_word(p);
         }
 
@@ -40,7 +40,7 @@ int main(int argc, char * argv[]) {
         char *tmp = parser_get_word(p);
         while (tmp) {
             dictionary_append(dict, tmp);
-            free(tmp); // Освобождаем память под слово
+            free(tmp); 
             tmp = parser_get_word(p);
         }
 
@@ -49,7 +49,7 @@ int main(int argc, char * argv[]) {
 
     dict = dictionary_sort(dict);
     dictionary_print(dict);
-    dictionary_destroy(dict); // Освобождаем память
+    dictionary_destroy(dict);
 
     return 0;
 }

@@ -1,4 +1,3 @@
-// dictionary.c
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,23 +38,20 @@ struct all_words * dictionary_append(struct all_words * all_words, char * word) 
         p = p->next;
     }
 
-    // Check the last node
     if (p->word && strcmp(p->word, word) == 0) {
         p->count++;
         return all_words;
     }
 
-    // Allocate memory for a new node
     struct all_words *new = malloc(sizeof(struct all_words));
     if (!new) {
-        perror("Memory allocation failed for new node");
+        perror("malloc");
         return all_words;
     }
 
-    // Allocate memory for the new word
     char *word_copy = malloc(strlen(word) + 1);
     if (!word_copy) {
-        perror("Memory allocation failed for word");
+        perror("malloc");
         free(new);
         return all_words;
     }
