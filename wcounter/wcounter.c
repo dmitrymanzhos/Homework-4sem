@@ -13,21 +13,43 @@
 #include "parser.h"
 
 
-int main(int argc, char * argv[]){
-    struct all_words * dict = dictionary_create();
+int main(int argc, char * argv[]) {
+    struct all_words *dict = dictionary_create();
+    if (argc < 2) {
+        struct parser *p = parser_create();
+        parser_open_file(p, NULL);
 
-    for(int i = 0; i < argc - 1; i++){
-        struct parser * p = parser_create();
-        parser_open_file(p, argv[i]);
-        char * tmp = parser_get_word(p);
-        while(tmp != NULL){
+        char *tmp = parser_get_word(p);
+        while (tmp) {
             dictionary_append(dict, tmp);
+            free(tmp); // Освобождаем память под слово
             tmp = parser_get_word(p);
         }
+
         parser_destroy(p);
     }
 
-    dictionary_sort(dict);
+    for (int i = 1; i < argc; i++) { // Начинаем с argv[1]
+        struct parser *p = parser_create();
+        if (parser_open_file(p, argv[i]) < 0) {
+            fprintf(stderr, "Failed to open file: %s\n", argv[i]);
+            parser_destroy(p);
+            continue;
+        }
+
+        char *tmp = parser_get_word(p);
+        while (tmp) {
+            dictionary_append(dict, tmp);
+            free(tmp); // Освобождаем память под слово
+            tmp = parser_get_word(p);
+        }
+
+        parser_destroy(p);
+    }
+
+    dict = dictionary_sort(dict);
     dictionary_print(dict);
+    dictionary_destroy(dict); // Освобождаем память
+
     return 0;
 }
