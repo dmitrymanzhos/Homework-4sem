@@ -1,3 +1,4 @@
+// dictionary.c
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,44 +9,60 @@ struct all_words{
     struct all_words * next;
 };
 
-struct all_words * dictionary_create(){ // конструктор
+struct all_words * dictionary_create(){
     struct all_words * all_words = malloc(sizeof(struct all_words));
+    if(!all_words) return NULL;
     *all_words = (struct all_words){0, NULL, NULL};
     return all_words;
 }
 
-int dictionary_destroy(struct all_words * all_words){ // деструктор
+int dictionary_destroy(struct all_words * all_words){
     struct all_words *p = all_words;
-    while(p->next != NULL){
-        free(p->word); // ???
-        struct all_words * next= p->next;
+    while(p != NULL){
+        free(p->word);
+        struct all_words * next = p->next;
         free(p);
         p = next;
-    };
+    }
     return 0;
 }
 
-struct all_words * dictionary_append(struct all_words * all_words, char * word){ // добавить слово
+struct all_words * dictionary_append(struct all_words * all_words, char * word){
+    if(!all_words || !word) return all_words;
+
     struct all_words *p = all_words;
     while(p->next != NULL){
-        if(strcmp(p->word, word) == 0){ //если 
+        if(p->word && strcmp(p->word, word) == 0){
             p->count++;
-            return p;
+            return all_words;
         }
         p = p->next;
-    };
+    }
+
+    // Check the last node
+    if(p->word && strcmp(p->word, word) == 0){
+        p->count++;
+        return all_words;
+    }
+
     struct all_words * new = malloc(sizeof(struct all_words));
-    p->next = new;
-    char * word_copy = malloc(sizeof(char *));
+    if(!new) return all_words;
+
+    char * word_copy = malloc(strlen(word) + 1);
+    if(!word_copy) {
+        free(new);
+        return all_words;
+    }
+
     strcpy(word_copy, word);
-    *new = (struct all_words){1, word_copy, NULL}; // ???word
+    *new = (struct all_words){1, word_copy, NULL};
+    p->next = new;
 
     return all_words;
 }
 
-
-struct all_words * dictionary_sort(struct all_words * all_words){ // сортировка ??? проверить
-    if (all_words == NULL || all_words->next == NULL) {
+struct all_words * dictionary_sort(struct all_words * all_words){
+    if (all_words == NULL || all_words->next == NULL || all_words->word == NULL) {
         return all_words;
     }
 
@@ -73,13 +90,15 @@ struct all_words * dictionary_sort(struct all_words * all_words){ // сорти�
     return sorted;
 }
 
+struct all_words * dictionary_print(struct all_words * all_words){
+    if(!all_words) return NULL;
 
-struct all_words * dictionary_print(struct all_words * all_words){ // печать
-	struct all_words* tmp;
-	printf("List:\n");
-	for ( tmp = all_words; tmp != NULL; tmp = tmp->next ) {
-		printf("%d\t%s\n", tmp->count, tmp->word);
-	}
+    struct all_words* tmp;
+    printf("List:\n");
+    for (tmp = all_words; tmp != NULL; tmp = tmp->next) {
+        if(tmp->word) {
+            printf("%d\t%s\n", tmp->count, tmp->word);
+        }
+    }
     return all_words;
 }
-
