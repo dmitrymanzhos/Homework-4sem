@@ -2,13 +2,19 @@
 
 Model::Model()
 {
-    int num_rabbits = 5;
-    int num_snakes = 1;
-    int num_segm = 1;
+    // int num_rabbits = 5;
+    // int num_snakes = 1;
+    // int num_segm = 1;
 
+    std::list<rabbit> rabbits;
+    std::list<Snake> snakes;
+}
 
-    std::list<rabbit> rabbits = {};
-    std::list<Snake> snakes = {};
+void Model::update()
+{
+    rabbit tmp = {50, 70};
+    rabbits.push_back(tmp); //????
+
 }
 
 
