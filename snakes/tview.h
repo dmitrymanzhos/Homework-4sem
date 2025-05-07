@@ -1,25 +1,28 @@
-#ifndef _TVIEW_H_
-#define _TVIEW_H_
+#ifndef CONSOLE_VIEW_H
+#define CONSOLE_VIEW_H
+
 #include "view.h"
+#include <termios.h>
+#include <unistd.h> // Добавляем для STDIN_FILENO
 
-class TView: public View
-// class TView
-{
+class ConsoleView : public View {
     public:
-    TView(); // контруктор
-
-    virtual void draw() ; // отрисовка, const override ????
-    virtual void run() ; // запуск цикла, event loop
+        ConsoleView();
+        ~ConsoleView() override;
+        
+        void render() override;
+        void handleInput() override;
+        bool isRunning() const override { return m_running; }
 
     private:
-    int xsize;
-    int ysize;
-
-    void clrscr(); // clear screen
-    void gotoxy(int x, int y); //go to (x,y)
-    void setcolor(const char * color);
-    
+        bool m_running = true;
+        struct termios m_oldTermios;
+        
+        void setupConsole(); // Только объявление, без реализации
+        void restoreConsole();
+        void drawBorder() const;
+        void drawSnake() const;
+        void drawFood() const;
 };
-
 
 #endif

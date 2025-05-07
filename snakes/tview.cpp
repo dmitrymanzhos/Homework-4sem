@@ -1,79 +1,99 @@
-#include <termios.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "tview.h"
-#include "view.h"
+#include <iostream>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/poll.h>
+#include <termios.h>
 
-// View::
-TView::TView(): View()
-{
-    int xsize = 100; // размер экрана
-    int ysize = 100; 
+ConsoleView::ConsoleView() {
+    // Сохраняем оригинальные настройки терминала
+    tcgetattr(STDIN_FILENO, &m_oldTermios);
     
-};
+    // Настраиваем новый режим
+    struct termios newTermios = m_oldTermios;
+    newTermios.c_lflag &= ~(ICANON | ECHO);  // Неканонический режим, без эха
+    newTermios.c_cc[VMIN] = 0;   // Не ждём ни одного символа
+    newTermios.c_cc[VTIME] = 0;  // Нет таймаута
+    tcsetattr(STDIN_FILENO, TCSANOW, &newTermios);
+}
 
 
-void TView::draw()
-{
-    struct winsize winsize;
+ConsoleView::~ConsoleView() {
+    restoreConsole();
+}
 
-    ioctl(0, TIOCGWINSZ, &winsize); // cчитывание размеров окна
-    clrscr();
-    gotoxy(winsize.ws_row/2, winsize.ws_col/2-3);
-    setcolor("green");
+void ConsoleView::setupConsole() {
+    tcgetattr(STDIN_FILENO, &m_oldTermios);
+    struct termios newTermios = m_oldTermios;
+    newTermios.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newTermios);
+}
 
-    write(STDOUT_FILENO, "hello!", 7);
-    pause();
+void ConsoleView::restoreConsole() {
+    tcsetattr(STDIN_FILENO, TCSANOW, &m_oldTermios);
+}
+void ConsoleView::render() {
+    std::cout << "\033[2J\033[H";
+    drawBorder();
+    drawSnake();
+    drawFood();
+    std::cout.flush();
+}
 
-};
+void ConsoleView::drawBorder() const {
+    int width = m_model->getWidth();
+    int height = m_model->getHeight();
+    
+    std::cout << "+" << std::string(width, '-') << "+\n";
+    for (int y = 0; y < height; ++y) {
+        std::cout << "|" << std::string(width, ' ') << "|\n";
+    }
+    std::cout << "+" << std::string(width, '-') << "+\n";
+}
 
-void TView::run()
-{
-    while(1){
-        draw();
-        // ...
-        getchar();
-        // реализация тика
-        // sleep();
-        // model->update()
+void ConsoleView::drawSnake() const {
+    for (const auto& segment : m_model->getSnake()->getBody()) {
+        std::cout << "\033[" << (segment.y + 2) << ";" << (segment.x + 2) << "H";
+        std::cout << (segment == m_model->getSnake()->getBody().back() ? "@" : "o");
     }
 }
 
-void TView::clrscr()
-{   
-    write(STDOUT_FILENO, "\033[H", 4);    // Перемещение курсора в верхний левый угол
-    write(STDOUT_FILENO, "\033[J", 4);     // Очистка экрана
-    // write(STDOUT_FILENO, "\033[H", 4);    // Перемещение курсора в верхний левый угол
-};
+void ConsoleView::drawFood() const {
+    for (const auto& food : m_model->getFood()) {
+        std::cout << "\033[" << (food.y + 2) << ";" << (food.x + 2) << "H";
+        std::cout << "*";
+    }
+}
 
-
-void TView::gotoxy(int x, int y)
-{
-    // проверить x,y
-    char line[10];
-    sprintf(line, "\033[%d;%dH", x, y);
-    write(STDOUT_FILENO, line, sizeof(line));
-
-};
-
-
-void TView::setcolor(const char * color)
-{   
-    // write(STDOUT_FILENO, "\033[32m", 5); // green
-    write(STDOUT_FILENO, "\033[31m", 5); // red
+void ConsoleView::handleInput() {
+    struct pollfd fd;
+    fd.fd = STDIN_FILENO;
+    fd.events = POLLIN;
     
-    // switch (color)
-    // {
-    // case "green":
-    //     write(STDOUT_FILENO, "\033[32m", 5);
-    //     break;
-    
-    // default:
-        
-    //     break;
-    // }
+    // Проверяем ввод без блокировки (таймаут 0)
+    if (poll(&fd, 1, 0) > 0) {
+        char c;
+        if (read(STDIN_FILENO, &c, 1) > 0) {
+            std::cout << "Нажата клавиша: " << c << "\n";  // Отладочный вывод
+            
+            switch (c) {
+                case 'w': 
+                case 'W':
+                    m_model->changeDirection(Direction::UP);
+                    break;
+                case 's':
+                case 'S':
+                    m_model->changeDirection(Direction::DOWN);
+                    break;
+                case 'a':
+                case 'A':
+                    m_model->changeDirection(Direction::LEFT);
+                    break;
+                case 'd':
+                case 'D':
+                    m_model->changeDirection(Direction::RIGHT);
+                    break;
+            }
+        }
+    }
 }
